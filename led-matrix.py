@@ -89,7 +89,10 @@ result = f_diff.union(f1x)
 result = result.union(f1y)
 result = result.union(f_wall)
 
+#round side edges
+result = result.edges("|Z and (>X or <X)").fillet(1.2)
+
 show_object(result)
 
 filename = f"led-matrix-{cnt_x}x{cnt_y}.stl"
-exporters.export(result, filename, tolerance=0.99, angularTolerance=0.5)
+exporters.export(result, filename, tolerance=0.99, angularTolerance=2)
