@@ -1,5 +1,4 @@
 # led-matrix
-Grid with diffusor for 16x16 LED matrix
 
 grid with diffusor for 16x16 LED-matrix (https://de.aliexpress.com/item/4000544584524.html)
 
