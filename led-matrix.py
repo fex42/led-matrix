@@ -7,6 +7,7 @@
 #
 
 import cadquery as cq
+from cadquery import exporters
 
 pcb_x = 160.0 # PCB x size
 pcb_y = 160.0 # PCB y size
@@ -54,7 +55,7 @@ f_x_div = (cq.Workplane("XY")
        .extrude(div_hx)
 )
 
-div_x_pts = [(x * div_dist_x - (div_dist_x*(cnt_x - 2))/2
+div_x_pts = [(x * div_dist_x - (div_dist_x*(div_cnt_x - 1))/2
              ,0
              ) for x in range(0, div_cnt_x)]
 
@@ -67,7 +68,7 @@ f_y_div = (cq.Workplane("XY")
 )
 
 div_y_pts = [(0
-             ,y * div_dist_y - (div_dist_y*(cnt_y - 2))/2
+             ,y * div_dist_y - (div_dist_y*(div_cnt_y - 1))/2
              ) for y in range(0, div_cnt_y)]
 
 f1y = f1.pushPoints(div_y_pts).eachpoint(lambda loc: f_y_div.val().moved(loc))
@@ -89,3 +90,6 @@ result = result.union(f1y)
 result = result.union(f_wall)
 
 show_object(result)
+
+filename = f"led-matrix-{cnt_x}x{cnt_y}.stl"
+exporters.export(result, filename, tolerance=0.99, angularTolerance=0.5)
