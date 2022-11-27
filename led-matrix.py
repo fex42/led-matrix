@@ -90,7 +90,7 @@ result = result.union(f1y)
 result = result.union(f_wall)
 
 #round side edges
-result = result.edges("|Z and (>X or <X)").fillet(1.2)
+result = result.edges("|Z and (>X or <X)").fillet(wall_th)
 
 show_object(result)
 
