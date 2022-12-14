@@ -9,87 +9,118 @@
 import cadquery as cq
 from cadquery import exporters
 
-pcb_x = 160.0 # PCB x size
-pcb_y = 160.0 # PCB y size
-pcb_th = 2.0 # PCB thickness
-pcb_cl = 0.4 # PCB clearance to outer wall
+pcb_x = 160.0  # PCB x size
+pcb_y = 160.0  # PCB y size
+cnt_x = 16  # LED count in X
+cnt_y = 16  # LED count in Y
 
-wall_th = 1.2 # outer wall thickness
+pcb_th = 2.0  # PCB thickness
+pcb_cl = 0.4  # PCB clearance to outer wall
 
-diff_h = 0.4 # diffusor height
+wall_th = 1.2  # outer wall thickness
 
-cnt_x = 16 # LED count in X
-cnt_y = 16 # LED count in Y
+diff_h = 0.01  # diffusor height
+mask_h = 1.6  # letter mask height
 
-div_th = 1.0 # divider wall thickness
-div_hx = 8.0 # X divider height 
-div_hy = 9.0 # Y divider height
+
+div_th = 1.0  # divider wall thickness
+div_hx = 8.0  # X divider height
+div_hy = 9.0  # Y divider height
+
+letters = iter(list(
+    "ESKISTLSINDEHALB" +
+    "DREIVIERTELSACHT" +
+    "ZWEINEUNULLZWÖLF" +
+    "DREISECHSIEBENEI" +
+    "ELFUNFZEHNKORUND" +
+    "ZWANZIGADREISSIG" +
+    "VIERZIGERFÜNFZIG" +
+    "MINUTENUHRBISVOR" +
+    "NACHOMITTERNACHT" +
+    "EINSEINEUNERVIER" +
+    "ZWEIDREIZOSIEBEN" +
+    "FÜNFEPROSITSECHS" +
+    "ZEHNNEUJAHR!FUND" +
+    "ZWANZIGADREISSIG" +
+    "VIERZIGELFÜNFZIG" +
+    "ZWÖLFEMINUTENUHR" ))
 
 ###
 
-box_x = pcb_x + 2*pcb_cl + 2*wall_th # over all X size
-box_y = pcb_y + 2*pcb_cl + 2*wall_th # over all Y size
+box_x = pcb_x + 2 * pcb_cl + 2 * wall_th  # over all X size
+box_y = pcb_y + 2 * pcb_cl + 2 * wall_th  # over all Y size
 
-div_cnt_x = cnt_x - 1 # number of X dividers
-div_cnt_y = cnt_y - 1 # number of Y dividers
+div_cnt_x = cnt_x - 1  # number of X dividers
+div_cnt_y = cnt_y - 1  # number of Y dividers
 
-div_dist_x = pcb_x / cnt_x # divider X distance
-div_dist_y = pcb_y / cnt_y # divider X distance
-
+div_dist_x = pcb_x / cnt_x  # divider X distance
+div_dist_y = pcb_y / cnt_y  # divider X distance
 
 # diffusor sketch
 s_diff = (cq.Sketch()
-          .rect(box_x, box_y)
-)
+          .rect(box_y, box_x)
+          )
 
 f_diff = (cq.Workplane("XY")
           .placeSketch(s_diff)
-          .extrude(diff_h)   
-)
+          .extrude(diff_h + mask_h)
+          )
 
-f1 = (cq.Workplane("XY")) #basic workplane object
+front_th = div_dist_x - wall_th
+
+f_diff_with_letters = (f_diff
+                       .rarray(div_dist_y, div_dist_x, cnt_y, cnt_x)
+                       .eachpoint(lambda loc: (cq.Workplane().workplane(offset=+diff_h)
+                                               .text(next(letters), 10, mask_h)
+                                               .rotate((0, 0, 1),(0, 0, 2), 90)
+                                               .val().moved(loc)), combine='s')
+                       .rotate((0, 0, 1), (0, 0, 2), 90)
+                       .mirror("XZ")
+                       )
+
+f1 = (cq.Workplane("XY"))  # basic workplane object
 
 # create X dividers (perpendicular to X axis)
 f_x_div = (cq.Workplane("XY")
-       .rect(div_th, box_y)
-       .extrude(div_hx)
-)
+           .rect(div_th, box_y)
+           .extrude(div_hx)
+           )
 
-div_x_pts = [(x * div_dist_x - (div_dist_x*(div_cnt_x - 1))/2
-             ,0
-             ) for x in range(0, div_cnt_x)]
+div_x_pts = [(x * div_dist_x - (div_dist_x * (div_cnt_x - 1)) / 2
+              , 0
+              ) for x in range(0, div_cnt_x)]
 
 f1x = f1.pushPoints(div_x_pts).eachpoint(lambda loc: f_x_div.val().moved(loc))
 
 # create Y dividers (perpendicular to Y axis)
 f_y_div = (cq.Workplane("XY")
-       .rect(box_x, div_th)
-       .extrude(div_hy)
-)
+           .rect(box_x, div_th)
+           .extrude(div_hy)
+           )
 
 div_y_pts = [(0
-             ,y * div_dist_y - (div_dist_y*(div_cnt_y - 1))/2
-             ) for y in range(0, div_cnt_y)]
+              , y * div_dist_y - (div_dist_y * (div_cnt_y - 1)) / 2
+              ) for y in range(0, div_cnt_y)]
 
 f1y = f1.pushPoints(div_y_pts).eachpoint(lambda loc: f_y_div.val().moved(loc))
 
 # create outer box wall with 
 
 f_wall = (cq.Workplane("XY")
-       .rect(box_x, box_y)
-       .rect(box_x - 2*(wall_th + div_th/2), box_y - 2*(wall_th + div_th/2)) # PCB support surface below PCB
-       .extrude(div_hy)
-       .faces(">Z").workplane()
-       .rect(box_x, box_y)
-       .rect(box_x - 2*wall_th, box_y - 2*wall_th) # outer rim around PCB
-       .extrude(pcb_th)
-)
+          .rect(box_x, box_y)
+          .rect(box_x - 2 * (wall_th + div_th / 2), box_y - 2 * (wall_th + div_th / 2))  # PCB support surface below PCB
+          .extrude(div_hy)
+          .faces(">Z").workplane()
+          .rect(box_x, box_y)
+          .rect(box_x - 2 * wall_th, box_y - 2 * wall_th)  # outer rim around PCB
+          .extrude(pcb_th)
+          )
 
-result = f_diff.union(f1x)
-result = result.union(f1y)
+result = f_diff_with_letters.union(f1y)
+result = result.union(f1x)
 result = result.union(f_wall)
 
-#round side edges
+# round side edges
 result = result.edges("|Z and (>X or <X)").fillet(wall_th)
 
 show_object(result)
