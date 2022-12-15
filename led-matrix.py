@@ -19,7 +19,7 @@ pcb_cl = 0.4  # PCB clearance to outer wall
 
 wall_th = 1.2  # outer wall thickness
 
-diff_h = 0.01  # diffusor height
+diff_h = 0.4  # diffusor height
 mask_h = 1.6  # letter mask height
 
 
@@ -68,15 +68,15 @@ f_diff = (cq.Workplane("XY")
 
 front_th = div_dist_x - wall_th
 
-f_diff_with_letters = (f_diff
-                       .rarray(div_dist_y, div_dist_x, cnt_y, cnt_x)
-                       .eachpoint(lambda loc: (cq.Workplane().workplane(offset=+diff_h)
-                                               .text(next(letters), 10, mask_h)
-                                               .rotate((0, 0, 1),(0, 0, 2), 90)
-                                               .val().moved(loc)), combine='s')
-                       .rotate((0, 0, 1), (0, 0, 2), 90)
-                       .mirror("XZ")
-                       )
+letters = (cq.Workplane("XY")
+           .rarray(div_dist_y, div_dist_x, cnt_y, cnt_x)
+           .eachpoint(lambda loc: (cq.Workplane().workplane(offset=diff_h)
+                                   .text(next(letters), 10, mask_h)
+                                   .rotate((0, 0, 1), (0, 0, 2), 90)
+                                   .val().moved(loc)))
+           .rotate((0, 0, 1), (0, 0, 2), 90)
+           .mirror("XZ")
+           )
 
 f1 = (cq.Workplane("XY"))  # basic workplane object
 
@@ -116,7 +116,8 @@ f_wall = (cq.Workplane("XY")
           .extrude(pcb_th)
           )
 
-result = f_diff_with_letters.union(f1y)
+result = f_diff.cut(letters)
+result = result.union(f1y)
 result = result.union(f1x)
 result = result.union(f_wall)
 
@@ -125,5 +126,5 @@ result = result.edges("|Z and (>X or <X)").fillet(wall_th)
 
 show_object(result)
 
-filename = f"led-matrix-{cnt_x}x{cnt_y}.stl"
+filename = f"wordclock-matrix-{cnt_x}x{cnt_y}.stl"
 exporters.export(result, filename, tolerance=0.99, angularTolerance=2)
