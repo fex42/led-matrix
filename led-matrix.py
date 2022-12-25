@@ -93,5 +93,6 @@ result = result.edges("|Z and (>X or <X)").fillet(wall_th)
 
 show_object(result)
 
-filename = f"led-matrix-{cnt_x}x{cnt_y}.stl"
-exporters.export(result, filename, tolerance=0.99, angularTolerance=2)
+filename = f"led-matrix-{cnt_x}x{cnt_y}"
+exporters.export(result, f"{filename}.stl")
+exporters.export(result, f"{filename}.step", exporters.ExportTypes.STEP)
